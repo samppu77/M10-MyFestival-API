@@ -1,71 +1,59 @@
-# My Festival REST API – M10 endpoint-dokumentti
+# M10 – My Festival REST API: endpoint-dokumentti
 
-**Tekijä:** [Kirjoita oma nimi]  
-**Julkinen osoite:** `https://[RAHTI-OSOITE]`  
-**GitHub:** `https://github.com/[KÄYTTÄJÄ]/[REPO]`  
-**Tarkistimen tulos:** [Lisää oikea tulos ajettuasi tarkistimen Rahti-osoitteeseen, esim. 20/20]
+**Tekijä:** Samuel Sippola  
+**GitHub:** https://github.com/samppu77/M10-MyFestival-API  
+**Julkinen API:** https://festival-samuelsip-samuelsi.2.rahtiapp.fi  
+**Tarkistin:** `test_endpoints.py` – **20/20 checks passed** (julkinen Rahti-osoite, 12.10.2026)
 
-> **Ennen palautusta:** Korvaa hakasulkujen paikat, kopioi esimerkkivastaukset omasta julkaistusta APIsta ja liitä tarkistimen koko tuloste. Alla olevat GET-esimerkit perustuvat tässä paketissa olevaan tietokantaan.
+## 1. Rajapinnan endpointit ja esimerkit
 
-## 1. Endpointit
+Alla on esimerkkikutsut ja vastaukset. GET-listojen vastauksista esitetään tilan säästämiseksi vain yksi tai muutama rivi; varsinainen API palauttaa kaikki kyseiseen hakuun kuuluvat rivit.
 
-| Metodi | Polku | Onnistuminen | Virhe |
-|---|---|---|---|
-| GET | `/api/artists` | 200 ja lista artisteista | – |
-| GET | `/api/days` | 200 ja festivaalipäivät | – |
-| GET | `/api/stages` | 200 ja lavat | – |
-| GET | `/api/artists/{id}/events` | 200 ja esiintymiset | 404, artistia ei löydy |
-| GET | `/api/timetable?day=YYYY-MM-DD` | 200 ja aikataulu | 400, väärä päivämuoto |
-| POST | `/api/events` | 201 ja uusi `event_id` | 400, virheellinen syöte |
-| DELETE | `/api/events/{id}` | 204, tyhjä vastaus | 404, tapahtumaa ei löydy |
+**1. `GET /api/artists` – artistien hakeminen.**  
+Kutsu: `GET https://festival-samuelsip-samuelsi.2.rahtiapp.fi/api/artists`  
+Vastaus **200 OK**, esimerkiksi: `[ {"artist_id":1,"name":"Aamuyön Valot","country":"FI"} ]`
 
-## 2. Esimerkkikutsut ja vastaukset
+**2. `GET /api/days` – festivaalipäivät.**  
+Kutsu: `GET https://festival-samuelsip-samuelsi.2.rahtiapp.fi/api/days`  
+Vastaus **200 OK**: `[{"day_id":1,"date":"2027-07-16"},{"day_id":2,"date":"2027-07-17"}]`
 
-**GET `/api/artists`**  
-Kutsu: `curl.exe https://[RAHTI-OSOITE]/api/artists`  
-Esimerkki listan yhdestä rivistä: `[{"artist_id":1,"name":"Aamuyön Valot","country":"FI"}, ...]` (lyhennetty listasta).
+**3. `GET /api/stages` – lavat.**  
+Kutsu: `GET https://festival-samuelsip-samuelsi.2.rahtiapp.fi/api/stages`  
+Vastaus **200 OK**, esimerkiksi: `[ {"stage_id":1,"name":"Aurinkolava"} ]`
 
-**GET `/api/days`**  
-Kutsu: `curl.exe https://[RAHTI-OSOITE]/api/days`  
-Vastaus: `[{"day_id":1,"date":"2027-07-16"},{"day_id":2,"date":"2027-07-17"}]`.
+**4. `GET /api/artists/{id}/events` – yhden artistin esiintymiset.**  
+Kutsu: `GET https://festival-samuelsip-samuelsi.2.rahtiapp.fi/api/artists/1/events`  
+Vastaus **200 OK**: `[{"event_id":1,"day":"2027-07-16","stage":"Aurinkolava","starts":"14:00:00"}]`  
+Tuntematon artisti, esim. `/api/artists/999999/events`: **404 Not Found** ja `{"error":"Artistia ei loytynyt"}`.
 
-**GET `/api/stages`**  
-Kutsu: `curl.exe https://[RAHTI-OSOITE]/api/stages`  
-Esimerkki: `[{"stage_id":1,"name":"Aurinkolava"}, ...]` (lyhennetty listasta).
+**5. `GET /api/timetable?day=YYYY-MM-DD` – ohjelma aikajärjestyksessä.**  
+Kutsu: `GET https://festival-samuelsip-samuelsi.2.rahtiapp.fi/api/timetable?day=2027-07-16`  
+Vastaus **200 OK**, esimerkkirivi: `[ {"date":"2027-07-16","stage":"Aurinkolava","artist":"Aamuyön Valot","starts":"10:00:00","ends":"10:20:00"} ]`  
+Ilman `day`-parametria palautuu koko ohjelma. Väärä muoto, esim. `day=not-a-date`: **400 Bad Request** ja JSON-virheviesti.
 
-**GET `/api/artists/1/events`**  
-Kutsu: `curl.exe https://[RAHTI-OSOITE]/api/artists/1/events`  
-Vastaus: `[{"event_id":1,"day":"2027-07-16","stage":"Aurinkolava","starts":"14:00:00"}]`.  
-Tuntematon artisti `/api/artists/999999/events`: **404**, `{"error":"Artistia ei loytynyt"}`.
-
-**GET `/api/timetable?day=2027-07-16`**  
-Kutsu: `curl.exe "https://[RAHTI-OSOITE]/api/timetable?day=2027-07-16"`  
-Ensimmäinen rivi: `{"date":"2027-07-16","stage":"Aurinkolava","artist":"Aamuyön Valot","starts":"10:00:00","ends":"10:20:00"}`.  
-Virheellinen päivä `?day=not-a-date`: **400** ja JSON-virheilmoitus.
-
-**POST `/api/events`**  
-Kutsu (PowerShell, yhden rivin komento):
-
-```powershell
-curl.exe -X POST "https://[RAHTI-OSOITE]/api/events" -H "Content-Type: application/json" -d '{"artist_id":1,"stage_id":1,"day_id":1,"start_dt":"2027-07-16 03:12:34"}'
-```
-
-**Odotettu vastauksen rakenne** (201, `event_id` vaihtelee):
+**6. `POST /api/events` – uuden esiintymisen lisääminen.**  
+Kutsu: `POST https://festival-samuelsip-samuelsi.2.rahtiapp.fi/api/events`, otsake `Content-Type: application/json` ja JSON-runko:
 
 ```json
-{"event_id": 19, "artist_id": 1, "stage_id": 1, "day_id": 1, "start_dt": "2027-07-16 03:12:34", "end_dt": "2027-07-16 03:57:34", "duration_min": 45}
+{"artist_id":1,"stage_id":1,"day_id":1,"start_dt":"2027-07-16 03:12:34"}
 ```
 
-Puuttuva kenttä tai olematon `artist_id`: **400** ja JSON-virheilmoitus. Vaihda yllä oleva oletettu `event_id` oikean POST-vastauksen tunnisteeseen ennen palautusta. Jos PowerShell käsittelee JSON-lainausmerkit väärin, testaa POST opettajan `test_endpoints.py`-tarkistimella.
+Vastaus **201 Created**, esimerkiksi:
 
-**DELETE `/api/events/{id}`**  
-Kutsu: `curl.exe -X DELETE https://[RAHTI-OSOITE]/api/events/[UUSI-EVENT-ID]`  
-Olemassa oleva tapahtuma: **204**, ei JSON-runkoa. Sama DELETE uudelleen: **404** ja JSON-virheilmoitus. Älä poista olemassa olevia harjoitusdatan tapahtumia: käytä vain itse lisäämääsi testitapahtumaa.
+```json
+{"event_id":19,"artist_id":1,"stage_id":1,"day_id":1,"start_dt":"2027-07-16 03:12:34","end_dt":"2027-07-16 03:57:34","duration_min":45}
+```
 
-## 3. Julkaisu Rahtiin
+`event_id` on tietokannan luoma ja voi olla eri. Puuttuvat kentät, virheellinen aika tai viiteavaintunniste palauttavat **400 Bad Request** ja JSON-virheviestin.
 
-[Kirjoita julkaisun jälkeen omin sanoin 3–6 lausetta. Kuvaile, miten Rahti haki GitHubista lähdekoodin, rakensi Dockerfilellä imagen, käynnisti Deploymentin ja julkaisi HTTPS-osoitteen Routen kautta. Kerro myös yksi **oikeasti kohtaamasi** ongelma ja miten selvitit sen.]
+**7. `DELETE /api/events/{id}` – esiintymisen poistaminen.**  
+Kutsu: `DELETE https://festival-samuelsip-samuelsi.2.rahtiapp.fi/api/events/19` (käytä oman POST-testin palauttamaa tunnistetta).  
+Onnistunut vastaus **204 No Content**, tyhjä runko. Tuntematon tai jo poistettu tunniste: **404 Not Found** ja `{"error":"Tapahtumaa ei loytynyt"}`.
 
-## 4. Tietoturva
+## 2. Julkaisu CSC Rahtiin
 
-SQL-kyselyissä käyttäjän antamat arvot annetaan parametreina (`?`), joten syöte ei pääse muuttamaan SQL-lauseen rakennetta. POST-pyynnössä tarkistetaan pakolliset kentät, tunnisteet ja päivämäärän muoto sekä otetaan käyttöön SQLite-viiteavaintarkistukset. Tuotantokäytössä rajapinta tarvitsisi lisäksi käyttäjien tunnistautumisen, kirjoitusoikeuksien hallinnan ja pyyntöjen määrän rajoittamisen, sillä nykyiset POST- ja DELETE-reitit ovat avoimia.
+Tein Flask-sovelluksen paikallisesti ja testasin sen SQLite-kantaani vastaan. Vein tiedostot julkiseen GitHub-repositorioon ja käytin Rahdissa toimintoa **Import from Git**, joka haki koodin ja rakensi Dockerfilellä kontti-imagen (**build**). Rahti käynnisti sovelluksen **deploymentin Podissa** portissa 8080 ja julkaisi sen **Service- ja Route-resurssien** kautta HTTPS-osoitteessa. Suojatussa Routessa on **TLS termination: Edge** sekä **Insecure traffic: Redirect**. Projektin luonnissa tuli aluksi virhe, koska CSC-projektinumero puuttui kuvauksesta; lisäsin `csc_project: 2021201`, minkä jälkeen projekti syntyi. Julkaistun APIn opettajan tarkistin läpäisi kaikki **20/20** tarkistusta.
+
+## 3. Tietoturva ja rajoitukset
+
+SQL-kyselyissä käyttäjän arvot välitetään parametreina (`?`), mikä ehkäisee SQL-injektioita. POST tarkistaa pakolliset kentät, tunnisteiden tyypit, aikamuodon ja SQLite-viiteavaimet; virheistä palautuu 400. HTTPS suojaa tiedonsiirtoa. Harjoitus-API:ssa ei ole tunnistautumista, joten kuka tahansa voi lähettää POST- ja DELETE-pyyntöjä: oikeaan käyttöön tarvittaisiin käyttöoikeudet ja pyyntöjen rajoittaminen. SQLite-tiedosto on pakattu kontti-imageen, joten käynnissä olevaan konttiin tehdyt muutokset eivät säily uuden Podin tai buildin jälkeen.
